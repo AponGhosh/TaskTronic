@@ -1,15 +1,21 @@
 
 import express, { json } from 'express';
-import { connect, connection } from 'mongoose';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 import cors from 'cors';
 import {
   find,
   create,
   findByIdAndUpdate,
   findByIdAndDelete,
-} from './models/taskTronic';
+} from './models/taskTronic.js';
+
+dotenv.config();
+
 
 const app = express();
+const { connect, connection } = mongoose;
+
 app.use(cors());
 app.use(json());
 
