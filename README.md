@@ -11,6 +11,12 @@ TaskTronic is a simple full-stack task management application (To‑Do list) wit
 - React single-page frontend
 - Health-check endpoint for backend
 
+## Live Demo
+
+- **Frontend (Vercel)**: https://task-tronic.vercel.app/
+- **Backend API (Render)**: https://tasktronic.onrender.com  
+
+
 ## Tech stack
 
 - Frontend: React
