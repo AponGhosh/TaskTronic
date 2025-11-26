@@ -142,6 +142,24 @@ app.get('/api/healthz', (req, res) => {
   });
 });
 
+// Root route - provides a quick human-readable landing page and link to health
+app.get('/', (req, res) => {
+  res.type('html').send(`
+    <!doctype html>
+    <html>
+      <head><meta charset="utf-8"><title>TaskTronic API</title></head>
+      <body style="font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:40px;">
+        <h1>TaskTronic API</h1>
+        <p>Backend is running. Use the health endpoint to verify status:</p>
+        <ul>
+          <li><a href="/api/health">/api/health</a> (simple)</li>
+          <li><a href="/api/healthz">/api/healthz</a> (detailed)</li>
+        </ul>
+      </body>
+    </html>
+  `);
+});
+
 // Error Handling Middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
