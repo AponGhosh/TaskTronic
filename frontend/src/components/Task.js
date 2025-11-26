@@ -1,4 +1,4 @@
-import axios from "axios";
+import * as API from '../api';
 import React, { useEffect, useState } from "react";
 
 function Task() {
@@ -13,11 +13,9 @@ function Task() {
 
     // Fetch tasks from database
     useEffect(() => {
-        axios.get('http://localhost:3001/api/tasks')
-            .then(result => {
-                setTaskList(result.data)
-            })
-            .catch(err => console.log(err))
+        API.getTasks()
+            .then(result => setTaskList(result.data))
+            .catch(err => console.log(err));
     }, [])
 
     // Function to toggle the editable state for a specific row
@@ -50,20 +48,14 @@ function Task() {
             return;
         }
 
-        axios.post('http://localhost:3001/api/tasks', { 
-            task: newTask, 
-            status: newStatus, 
-            deadline: newDeadline 
-        })
+        API.addTask({ task: newTask, status: newStatus, deadline: newDeadline })
         .then(res => {
             setNewTask("");
             setNewStatus("");
             setNewDeadline("");
-            return axios.get('http://localhost:3001/api/tasks');
+            return API.getTasks();
         })
-        .then(res => {
-            setTaskList(res.data);
-        })
+        .then(res => setTaskList(res.data))
         .catch(err => console.log(err));
     }
 
@@ -80,10 +72,8 @@ function Task() {
             return;
         }
 
-        axios.put(`http://localhost:3001/api/tasks/${id}`, editedData)
-            .then(result => {
-                return axios.get('http://localhost:3001/api/tasks');
-            })
+        API.updateTask(id, editedData)
+            .then(() => API.getTasks())
             .then(res => {
                 setTaskList(res.data);
                 setEditableId(null);
@@ -97,13 +87,9 @@ function Task() {
     // Delete task from database
     const deleteTask = (id) => {
         if (window.confirm("Are you sure you want to delete this task?")) {
-            axios.delete(`http://localhost:3001/api/tasks/${id}`)
-                .then(result => {
-                    return axios.get('http://localhost:3001/api/tasks');
-                })
-                .then(res => {
-                    setTaskList(res.data);
-                })
+            API.deleteTask(id)
+                .then(() => API.getTasks())
+                .then(res => setTaskList(res.data))
                 .catch(err => console.log(err));
         }
     }

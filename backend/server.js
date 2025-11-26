@@ -13,21 +13,19 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://taskList:task1234@cluster0.r220rbu.mongodb.net/task?retryWrites=true&w=majority&appName=Cluster0';
+const MONGO_URI = process.env.MONGO_URI;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
-// Enhanced CORS Configuration
+// CORS Configuration - allow only configured frontend origin
 const corsOptions = {
-  origin: ['http://localhost:3000', 'http://192.168.0.122:3000'],
+  origin: FRONTEND_URL,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
   optionsSuccessStatus: 200 // For legacy browser support
 };
 
-// Apply CORS middleware
 app.use(cors(corsOptions));
-
-// Handle preflight requests
 app.options('*', cors(corsOptions));
 
 // Middleware
@@ -37,32 +35,30 @@ app.use(express.urlencoded({ extended: true }));
 // MongoDB Connection
 // Connect with retry and clearer diagnostics
 function connectWithRetry(retries = 0) {
+  if (!MONGO_URI) {
+    console.error('MONGO_URI is not set. Set the environment variable MONGO_URI to your MongoDB Atlas connection string.');
+    return;
+  }
+
   mongoose.connect(MONGO_URI)
     .then(() => console.log('MongoDB Atlas connected successfully'))
     .catch(err => {
       console.error('MongoDB connection error:', err);
-      // Helpful troubleshooting hints
-      console.error('Troubleshooting tips:');
-      console.error(' - Verify MONGO_URI is correct (no typos)');
-      console.error(' - If using mongodb+srv://, ensure SRV DNS resolves:');
-      console.error('     nslookup -type=SRV _mongodb._tcp.<your-cluster>.mongodb.net');
-      console.error(' - Make sure your IP or 0.0.0.0/0 is added to Atlas Network Access (IP whitelist)');
-      console.error(' - If on a corporate/VPN network, try from a different network or use public DNS (e.g. 8.8.8.8)');
+      console.error(' - Verify MONGO_URI is correct and contains username/password (if required)');
+      console.error(' - Ensure your Atlas cluster allows connections from your app (Network Access)');
 
-      // Retry with exponential backoff (stop after a few attempts)
       if (retries < 5) {
         const delay = Math.min(30000, 2000 * Math.pow(2, retries));
         console.log(`Retrying MongoDB connection in ${delay / 1000}s (attempt ${retries + 1})`);
         setTimeout(() => connectWithRetry(retries + 1), delay);
       } else {
-        console.error('Exceeded MongoDB connection retry attempts. Exiting or wait for manual restart.');
+        console.error('Exceeded MongoDB connection retry attempts.');
       }
     });
 }
 
 connectWithRetry();
 
-// Keep logging lower-level connection errors
 mongoose.connection.on('error', err => {
   console.error('MongoDB connection error (event):', err);
 });
@@ -131,10 +127,17 @@ app.delete('/api/tasks/:id', async (req, res) => {
 });
 
 // Health Check Endpoint
+// Health route: required response { ok: true }
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK',
-    database: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
+  res.json({ ok: true });
+});
+
+// Optional detailed health endpoint for debugging
+app.get('/api/healthz', (req, res) => {
+  res.json({
+    ok: mongoose.connection.readyState === 1,
+    readyState: mongoose.connection.readyState,
+    frontend: FRONTEND_URL,
     timestamp: new Date().toISOString()
   });
 });
